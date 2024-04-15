@@ -40,6 +40,12 @@ export function createTextResponse(
           parseType === 'text/xml'
         ) {
           bodyCache = new DOMParser().parseFromString(text, parseType)
+
+          // https://developer.mozilla.org/en-US/docs/Web/API/DOMParser/parseFromString#error_handling
+          const errorNode = bodyCache.querySelector('parsererror')
+          if (errorNode) {
+            throw new Error(errorNode.textContent ?? 'Unknown')
+          }
         } else {
           // eslint-disable-next-line no-console
           console.error('Unknown content type', parseType)

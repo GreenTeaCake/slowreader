@@ -225,3 +225,84 @@ test('loads text to parse posts', async () => {
   })
   deepStrictEqual(text.calls, [['https://example.com/news/']])
 })
+
+test('parses description having img with trailing slash', async () => {
+  let task = createDownloadTask()
+  deepStrictEqual(
+    loaders.rss
+      .getPosts(
+        task,
+        'https://example.com/news/',
+        exampleRss(
+          `<?xml version="1.0"?>
+          <rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:media="http://search.yahoo.com/mrss/" version="2.0">
+          <channel>
+            <title>Feed</title>
+            <item>
+              <title>1 <b>XSS</b></title>
+              <link>https://example.com/1</link>
+              <description><img src="https://example.com/image_from_description.webp"/>Post 1 <b>XSS</b></description>
+              <pubDate>Mon, 01 Jan 2023 00:00:00 GMT</pubDate>
+            </item>
+          </channel>
+        </rss>`
+        )
+      )
+      .get(),
+    {
+      hasNext: false,
+      isLoading: false,
+      list: [
+        {
+          full: 'Post 1 XSS',
+          media: [],
+          originId: 'https://example.com/1',
+          publishedAt: 1672531200,
+          title: '1 XSS',
+          url: 'https://example.com/1'
+        }
+      ]
+    }
+  )
+})
+
+// example https://feeds.feedburner.com/blogspot/MKuf
+test('parses description having img without trailing slash', async () => {
+  let task = createDownloadTask()
+  deepStrictEqual(
+    loaders.rss
+      .getPosts(
+        task,
+        'https://example.com/news/',
+        exampleRss(
+          `<?xml version="1.0"?>
+          <rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:media="http://search.yahoo.com/mrss/" version="2.0">
+          <channel>
+            <title>Feed</title>
+            <item>
+              <title>1 <b>XSS</b></title>
+              <link>https://example.com/1</link>
+              <description><img src="https://example.com/image_from_description.webp">Post 1 <b>XSS</b></description>
+              <pubDate>Mon, 01 Jan 2023 00:00:00 GMT</pubDate>
+            </item>
+          </channel>
+        </rss>`
+        )
+      )
+      .get(),
+    {
+      hasNext: false,
+      isLoading: false,
+      list: [
+        {
+          full: 'Post 1 XSS',
+          media: [],
+          originId: 'https://example.com/1',
+          publishedAt: 1672531200,
+          title: '1 XSS',
+          url: 'https://example.com/1'
+        }
+      ]
+    }
+  )
+})
